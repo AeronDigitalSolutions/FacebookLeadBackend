@@ -19,8 +19,19 @@ connectDB();
 
 const app = express();
 
-/* ---------------- MIDDLEWARE ---------------- */
-app.use(cors());
+/* ---------------- CORS CONFIG ---------------- */
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://facebooklead.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 /* ---------------- ROUTES ---------------- */
@@ -38,8 +49,9 @@ const server = http.createServer(app);
 
 export const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // frontend URL
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -54,6 +66,6 @@ io.on("connection", (socket) => {
 
 /* ---------------- START SERVER ---------------- */
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server + Socket running on port ${PORT}`)
-);
+server.listen(PORT, () => {
+  console.log(`🚀 Server + Socket running on port ${PORT}`);
+});
