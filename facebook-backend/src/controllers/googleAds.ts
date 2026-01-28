@@ -5,7 +5,7 @@ import GoogleAccount from "../models/GoogleAccount";
 
 /* STEP 1: START OAUTH */
 export const googleAuth = (req: Request, res: Response) => {
-  const userId = req.user.id; // SAFE now
+  const userId = req.user.userId; // ✅ FIXED
   const url = getGoogleAuthUrl(userId.toString());
   res.redirect(url);
 };
@@ -30,14 +30,14 @@ export const googleCallback = async (req: Request, res: Response) => {
           ? new Date(tokens.expiry_date)
           : null,
       },
-      { upsert: true, new: true }
+      { upsert: true }
     );
 
     res.redirect(
       `${process.env.FRONTEND_URL}/dashboard/google/success`
     );
   } catch (err) {
-    console.error("Google OAuth callback error:", err);
+    console.error(err);
     res.redirect(
       `${process.env.FRONTEND_URL}/dashboard/google/error`
     );
@@ -47,7 +47,7 @@ export const googleCallback = async (req: Request, res: Response) => {
 /* STEP 3: FETCH ACCOUNTS */
 export const getGoogleAccounts = async (req: Request, res: Response) => {
   const account = await GoogleAccount.findOne({
-    userId: req.user.id,
+    userId: req.user.userId, // ✅ FIXED
   });
 
   if (!account) return res.json([]);

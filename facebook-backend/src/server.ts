@@ -1,5 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
+dotenv.config(); // 👈 MUST BE FIRST
+
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
@@ -13,6 +15,13 @@ import leadRoutes from "./routes/lead";
 import formRoutes from "./routes/form";
 import submissionRoutes from "./routes/submission";
 import googleAdsRoutes from "./routes/googleAds";
+import emailRoutes from "./routes/mailbox";
+import inboxRoutes from "./routes/inbox"; // ✅ ADD THIS
+import instagramRoutes from "./routes/instagram";
+import trackingRoutes from "./routes/tracking";
+import emailVerifierRoutes from "./routes/emailVerifier";
+import emailLeadsRoutes from "./routes/emailLeads";
+
 
 dotenv.config();
 connectDB();
@@ -43,6 +52,13 @@ app.use("/api/leads", leadRoutes);
 app.use("/api/forms", formRoutes);
 app.use("/api/forms", submissionRoutes);
 app.use("/api/google", googleAdsRoutes);
+app.use("/api/email", emailRoutes);
+app.use("/api/email", inboxRoutes);   // ✅ INBOX ROUTES
+app.use(instagramRoutes);
+app.use("/api", trackingRoutes);
+app.use("/api/email", emailVerifierRoutes);
+
+app.use("/api/email-leads", emailLeadsRoutes);
 
 /* ---------------- HTTP + SOCKET SERVER ---------------- */
 const server = http.createServer(app);

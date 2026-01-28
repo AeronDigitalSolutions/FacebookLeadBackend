@@ -11,5 +11,12 @@ export const getGoogleAuthUrl = (userId: string) =>
     access_type: "offline",
     prompt: "consent",
     scope: ["https://www.googleapis.com/auth/adwords"],
-    state: userId,
+    state: userId, // 🔥 REQUIRED
   });
+if (
+  !process.env.GOOGLE_CLIENT_ID ||
+  !process.env.GOOGLE_CLIENT_SECRET ||
+  !process.env.GOOGLE_REDIRECT_URI
+) {
+  throw new Error("❌ Google OAuth env vars missing");
+}
