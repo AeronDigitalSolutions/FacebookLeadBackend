@@ -1,7 +1,32 @@
 import Imap from "imap";
-import { simpleParser } from "mailparser";
+import {
+  simpleParser,
+  ParsedMail,
+  AddressObject,
+} from "mailparser";
 import InboxEmail from "../models/inboxEmail";
 
+/* =========================
+   HELPERS
+========================= */
+const getAddressText = (
+  address?: AddressObject | AddressObject[]
+): string => {
+  if (!address) return "";
+
+  if (Array.isArray(address)) {
+    return address
+      .map((a) => a.text)
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return address.text || "";
+};
+
+/* =========================
+   FETCH FOLDER EMAILS
+========================= */
 export const fetchFolderEmails = (
   mailbox: any,
   folder: string
@@ -25,7 +50,7 @@ export const fetchFolderEmails = (
         }
 
         imap.search(["ALL"], (err, results) => {
-          if (!results || results.length === 0) {
+          if (err || !results || results.length === 0) {
             imap.end();
             return resolve();
           }
@@ -39,7 +64,7 @@ export const fetchFolderEmails = (
           fetcher.on("message", (msg) => {
             msg.on("body", (stream) => {
               simpleParser(stream)
-                .then(async (parsed) => {
+                .then(async (parsed: ParsedMail) => {
                   const messageId =
                     parsed.messageId ||
                     `${mailbox._id}-${Date.now()}`;
@@ -52,22 +77,24 @@ export const fetchFolderEmails = (
                       folder,
 
                       subject: parsed.subject || "(No Subject)",
-                      from: Array.isArray(parsed.from) ? (parsed.from as any[]).map((addr: any) => addr.text).join(', ') : (parsed.from as any)?.text || "",
-                      to: Array.isArray(parsed.to) ? (parsed.to as any[]).map((addr: any) => addr.text).join(', ') : (parsed.to as any)?.text || "",
-                      cc: Array.isArray(parsed.cc) ? (parsed.cc as any[]).map((addr: any) => addr.text).join(', ') : (parsed.cc as any)?.text || "",
+                      from: getAddressText(parsed.from),
+                      to: getAddressText(parsed.to),
+                      cc: getAddressText(parsed.cc),
 
                       bodyText: parsed.text || "",
                       bodyHtml: parsed.html || "",
 
                       date: parsed.date || new Date(),
                       hasAttachments:
-                        parsed.attachments?.length > 0,
+                        (parsed.attachments?.length || 0) > 0,
                       isRead: false,
                     },
                     { upsert: true }
                   );
                 })
-                .catch(console.error);
+                .catch((err) => {
+                  console.error("Mail parse error:", err);
+                });
             });
           });
 
@@ -79,6 +106,10 @@ export const fetchFolderEmails = (
       });
     });
 
-    imap.once("error", reject);
+    imap.once("error", (err) => {
+      console.error("IMAP error:", err);
+      reject(err);
+    });
+
     imap.connect();
   });
